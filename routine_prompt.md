@@ -29,8 +29,11 @@ Run the two buckets exactly as before:
 
 ### Step 2 — Clean the pool
 - Merge both buckets, dedupe by ytChannelId (keep highest outlierScore on collision).
-- Drop disqualifiers: created >90 days ago, monthlyViews 0/missing, not monetized,
-  missing channel id, (Vidrush only) avg length outside 600–2400s.
+- **Preserve `ytChannelId` exactly as NexLev returns it.** Do NOT reconstruct it from a
+  URL field — niche-finder results sometimes have a null URL, and rebuilding from URL is
+  what silently dropped whole buckets before. Carry the raw id straight through.
+- Drop disqualifiers: created >90 days ago, **monthly views < 500,000 (ALL buckets)**,
+  not monetized, missing channel id, (Vidrush only) avg length outside 600–2400s.
 - Sleep bucket: keep top 5 by outlierScore — EXCEPT any channel with outlierScore ≥ 3
   AND age ≤ 45 days, which always stays.
 
@@ -57,3 +60,6 @@ exits with an error, the run is a FAILURE — say so, do not report success.
 - Do NOT call notion-create-pages yourself. The script is the only writer.
 - Do NOT touch the `Doability` field anywhere.
 - Never report success unless `python notion_writer.py` finished without error.
+- The script independently enforces the 500,000-view floor and drops missing-id rows,
+  and prints how many it dropped for each reason. If "Dropped (missing id)" is large,
+  a bucket was lost upstream — treat that as a problem to investigate, not a clean run.

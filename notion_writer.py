@@ -33,6 +33,10 @@ NOTION_VERSION = "2022-06-28"
 CANDIDATES_FILE = os.environ.get("CANDIDATES_FILE", "candidates.json")
 BODY_NOTE = "Revenue, RPM, and view figures are Nexlev estimates."
 
+# Global monthly-views floor applied to EVERY channel, all buckets.
+# Set to 0 to disable. Default 500000.
+MIN_MONTHLY_VIEWS = int(os.environ.get("MIN_MONTHLY_VIEWS", "500000"))
+
 NICHE_OPTIONS = {
     "history", "crime", "sleep", "science", "wildlife", "health", "politics",
     "travel", "tech", "finance", "life stories", "celebrity", "movies", "other",
@@ -189,10 +193,32 @@ def main():
         die(f"{CANDIDATES_FILE} not found. The routine must write it before this runs.")
 
     with open(CANDIDATES_FILE) as f:
-        candidates = json.load(f)
-    candidates = [c for c in candidates if c.get("ytChannelId")]
+        raw = json.load(f)
 
-    print(f"Loaded {len(candidates)} candidate(s) from {CANDIDATES_FILE}")
+    total_loaded = len(raw)
+
+    # --- Filter 1: must have a real channel id (catches the null-ID bucket loss) ---
+    with_id = [c for c in raw if c.get("ytChannelId")]
+    dropped_no_id = total_loaded - len(with_id)
+
+    # --- Filter 2: global monthly-views floor, applied to EVERY bucket ---
+    def views_of(c):
+        try:
+            return int((c.get("stats") or {}).get("monthlyViews") or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    candidates = [c for c in with_id if views_of(c) >= MIN_MONTHLY_VIEWS]
+    dropped_low_views = len(with_id) - len(candidates)
+
+    print(f"Loaded {total_loaded} candidate(s) from {CANDIDATES_FILE}")
+    if dropped_no_id:
+        print(f"  DROPPED {dropped_no_id} for MISSING channel id "
+              f"(possible upstream bucket loss — investigate if this is large)")
+    if dropped_low_views:
+        print(f"  DROPPED {dropped_low_views} below {MIN_MONTHLY_VIEWS:,} monthly views")
+    print(f"  {len(candidates)} candidate(s) passed filters")
+
     known = fetch_existing_channel_ids()
     print(f"Found {len(known)} channel(s) already in Notion")
 
@@ -218,6 +244,9 @@ def main():
             print(f"  FAILED {c.get('title')}  ->  {err}")
 
     print("\n=== SUMMARY ===")
+    print(f"Loaded from file:            {total_loaded}")
+    print(f"Dropped (missing id):        {dropped_no_id}")
+    print(f"Dropped (below {MIN_MONTHLY_VIEWS:,} views): {dropped_low_views}")
     print(f"Already in Notion (skipped): {len(candidates) - len(new_channels)}")
     print(f"New written (real page ids): {len(created)}")
     print(f"Write failures:              {len(failed)}")
