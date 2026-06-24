@@ -19,6 +19,14 @@ Run the two buckets exactly as before:
 - `find_outlier_faceless_channels` minOutlierScore ≥ 1.5. Keep only created ≤ 90 days,
   drop sleep/meditation/calm/bedtime tags, drop avg length <600 or >2400s.
   Tag `discoverySource = "Outlier Pass"`.
+  **CRITICAL — where the channel id is:** this tool does NOT return a `ytChannelId`.
+  Its top-level `id` is a NexLev DB row id (e.g. `474890`), NOT a YouTube id — never
+  use it. The real YouTube id lives ONLY in the `url` field
+  (`https://youtube.com/channel/UC...`); parse the `UC...` out of `url` and use THAT
+  as `ytChannelId`. (This is the exception to the "don't reconstruct from URL" rule
+  below, which applies only to `search_niche_finder_channels`.) Every id you carry
+  forward must start with `UC` — if it starts with `DB_` or is a bare number, you
+  grabbed the wrong field and the writer will drop it.
 
 **Sleep bucket**
 - 5 semantic queries ("sleep stories", "sleep meditation", "bedtime history documentary
@@ -29,9 +37,13 @@ Run the two buckets exactly as before:
 
 ### Step 2 — Clean the pool
 - Merge both buckets, dedupe by ytChannelId (keep highest outlierScore on collision).
-- **Preserve `ytChannelId` exactly as NexLev returns it.** Do NOT reconstruct it from a
-  URL field — niche-finder results sometimes have a null URL, and rebuilding from URL is
-  what silently dropped whole buckets before. Carry the raw id straight through.
+- **Preserve `ytChannelId` exactly as NexLev returns it.** For `search_niche_finder_channels`
+  (Vidrush + Sleep scans) do NOT reconstruct it from a URL field — niche-finder results
+  sometimes have a null URL, and rebuilding from URL is what silently dropped whole buckets
+  before. Carry the raw id straight through. **EXCEPTION:** `find_outlier_faceless_channels`
+  has no id field at all — its real YouTube id exists only inside `url`, so for that tool you
+  MUST parse the `UC...` out of `url` (see Step 1). Either way, every `ytChannelId` must be a
+  real YouTube id starting with `UC`; never carry a `DB_...` / numeric NexLev db id forward.
 - Drop disqualifiers: created >90 days ago, **monthly views < 500,000 (ALL buckets)**,
   not monetized, missing channel id, (Vidrush only) avg length outside 600–2400s.
 - Sleep bucket: keep top 5 by outlierScore — EXCEPT any channel with outlierScore ≥ 3

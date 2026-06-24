@@ -201,6 +201,18 @@ def main():
     with_id = [c for c in raw if c.get("ytChannelId")]
     dropped_no_id = total_loaded - len(with_id)
 
+    # --- Filter 1b: id must be a real YouTube channel id (starts with "UC") ---
+    # A real YouTube channel id is "UC" + 22 url-safe chars. Anything else
+    # (e.g. NexLev's internal "DB_474890" db id, which find_outlier_faceless_channels
+    # returns in its `id` field — the real id lives only in that tool's `url`) is
+    # garbage: it produces a broken Channel URL. Drop it loudly instead of writing it.
+    def valid_yt_id(cid):
+        return bool(re.fullmatch(r"UC[0-9A-Za-z_-]{22}", str(cid).strip()))
+
+    with_valid_id = [c for c in with_id if valid_yt_id(c.get("ytChannelId"))]
+    bad_ids = [str(c.get("ytChannelId")).strip() for c in with_id if not valid_yt_id(c.get("ytChannelId"))]
+    dropped_bad_id = len(with_id) - len(with_valid_id)
+
     # --- Filter 2: global monthly-views floor, applied to EVERY bucket ---
     def views_of(c):
         try:
@@ -208,13 +220,17 @@ def main():
         except (TypeError, ValueError):
             return 0
 
-    candidates = [c for c in with_id if views_of(c) >= MIN_MONTHLY_VIEWS]
-    dropped_low_views = len(with_id) - len(candidates)
+    candidates = [c for c in with_valid_id if views_of(c) >= MIN_MONTHLY_VIEWS]
+    dropped_low_views = len(with_valid_id) - len(candidates)
 
     print(f"Loaded {total_loaded} candidate(s) from {CANDIDATES_FILE}")
     if dropped_no_id:
         print(f"  DROPPED {dropped_no_id} for MISSING channel id "
               f"(possible upstream bucket loss — investigate if this is large)")
+    if dropped_bad_id:
+        print(f"  DROPPED {dropped_bad_id} for NON-YOUTUBE channel id "
+              f"(not 'UC...' — e.g. a NexLev DB id from find_outlier's `id` field; "
+              f"parse the real id from that tool's `url` instead): {bad_ids[:10]}")          
     if dropped_low_views:
         print(f"  DROPPED {dropped_low_views} below {MIN_MONTHLY_VIEWS:,} monthly views")
     print(f"  {len(candidates)} candidate(s) passed filters")
