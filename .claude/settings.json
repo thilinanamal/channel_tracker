@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allowlist": {
+      "bash": [
+        "python",
+        "pip",
+        "python3",
+        "git",
+        "cp",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "echo",
+        "wc",
+        "grep",
+        "jq"
+      ],
+      "mcp": {
+        "NexLev": [
+          "mcp__NexLev__search_niche_finder_channels",
+          "mcp__NexLev__find_outlier_faceless_channels"
+        ],
+        "Notion": [
+          "mcp__Notion__notion-query-database-view",
+          "mcp__Notion__notion-create-pages"
+        ]
+      }
+    }
+  }
+}

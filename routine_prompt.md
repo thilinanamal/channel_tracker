@@ -75,3 +75,6 @@ exits with an error, the run is a FAILURE — say so, do not report success.
 - The script independently enforces the 500,000-view floor and drops missing-id rows,
   and prints how many it dropped for each reason. If "Dropped (missing id)" is large,
   a bucket was lost upstream — treat that as a problem to investigate, not a clean run.
+- DO NOT push changes to GitHub. This routine is for discovery and Notion writes only.
+  Any local `candidates.json` or `notion_writer.py` fixes belong in manual commits/PRs.
+  The routine should end after the Notion writer completes.
