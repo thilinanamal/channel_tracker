@@ -1,31 +1,22 @@
 {
   "permissions": {
-    "allowlist": {
-      "bash": [
-        "python",
-        "pip",
-        "python3",
-        "git",
-        "cp",
-        "ls",
-        "cat",
-        "head",
-        "tail",
-        "echo",
-        "wc",
-        "grep",
-        "jq"
-      ],
-      "mcp": {
-        "NexLev": [
-          "mcp__NexLev__search_niche_finder_channels",
-          "mcp__NexLev__find_outlier_faceless_channels"
-        ],
-        "Notion": [
-          "mcp__Notion__notion-query-database-view",
-          "mcp__Notion__notion-create-pages"
-        ]
-      }
-    }
+    "allow": [
+      "Bash(python *)",
+      "Bash(pip *)",
+      "Bash(git *)",
+      "Bash(cp *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(echo *)",
+      "Bash(wc *)",
+      "Bash(grep *)",
+      "Bash(jq *)",
+      "mcp__NexLev__search_niche_finder_channels",
+      "mcp__NexLev__find_outlier_faceless_channels",
+      "mcp__Notion__notion-query-database-view",
+      "mcp__Notion__notion-create-pages"
+    ]
   }
 }
