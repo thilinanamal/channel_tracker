@@ -21,6 +21,7 @@ Input file: candidates.json  (a list of channel objects, shape described in READ
 
 import json
 import os
+import re
 import sys
 from datetime import date, datetime
 
